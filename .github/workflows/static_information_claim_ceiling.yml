@@ -1,0 +1,72 @@
+name: Static information claim ceiling
+
+on:
+  pull_request:
+    paths:
+      - 'causal_model/generality_sweep.py'
+      - 'causal_model/_compat_generality_sweep.py'
+      - 'paper/run_static_information_diagnostic.py'
+      - 'paper/g2_frozen_benchmark_protocol.json'
+      - 'paper/manuscript.md'
+      - 'paper/supporting_information.md'
+      - 'tests/test_static_information_claim_ceiling.py'
+      - '.github/workflows/static_information_claim_ceiling.yml'
+  workflow_dispatch:
+
+jobs:
+  full-diagnostic:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install diagnostic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas matplotlib pytest
+      - name: Run smoke tests
+        run: pytest -q tests/test_static_information_claim_ceiling.py
+      - name: Run full matched diagnostic
+        run: |
+          mkdir -p outputs
+          python paper/run_static_information_diagnostic.py --output outputs/static_information_diagnostic.json > /dev/null
+      - name: Verify claim-ceiling cells and frozen G2 firewall
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path('outputs/static_information_diagnostic.json').read_text())
+          protocol = json.loads(Path('paper/g2_frozen_benchmark_protocol.json').read_text())
+          assert data['status'] == 'post_frozen_claim_ceiling_diagnostic'
+          assert data['preregistered_g2_modified'] is False
+          assert protocol['selection_validation']['policies'] == ['rach_seq', 'random_order']
+
+          rows = {(r['policy'], r['budget']): r for r in data['aggregate']}
+          expected = {
+              ('information_guided', 2): (0.990, 1.0000, 1.505, 0.001, 0.0),
+              ('information_guided', 4): (0.999, 1.0000, 1.518, 0.014, 0.0),
+              ('static_initial_information', 2): (0.990, 1.0000, 1.505, 0.001, 0.0),
+              ('static_initial_information', 4): (0.998, 1.0000, 1.518, 0.014, 0.0),
+              ('random_order', 2): (0.435, 0.6045, 1.821, 0.974, 0.0),
+              ('random_order', 4): (0.940, 1.0000, 2.673, 1.169, 0.0),
+          }
+          for key, target in expected.items():
+              row = rows[key]
+              got = (
+                  row['frac_converged_mean'],
+                  row['mean_frac_resolved_mean'],
+                  row['mean_steps_mean'],
+                  row['mean_distractors_selected_mean'],
+                  row['false_exclusion_rate_mean'],
+              )
+              assert all(abs(a-b) < 1e-9 for a, b in zip(got, target)), (key, got, target)
+          print('static-information claim ceiling reproduced; frozen G2 firewall intact')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: static-information-claim-ceiling
+          path: outputs/static_information_diagnostic.json
+          if-no-files-found: error
+          retention-days: 90

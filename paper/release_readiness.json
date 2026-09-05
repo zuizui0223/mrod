@@ -1,32 +1,48 @@
 {
-  "schema_version": 9,
+  "schema_version": 10,
   "method_name": "Mechanism-Resolving Observation Design",
   "distribution": "mechanism-resolution-design",
   "version": "0.1.0",
   "suggested_release_tag": "v0.1.0",
-  "status": "final_theorem_complete_reproducibility_and_reviewer_artifacts_pass",
-  "submission_status": "pre_export_blocked_on_human_metadata",
+  "status": "source_matched_refreeze_pending_after_internal_rename",
+  "submission_status": "pre_export_blocked_on_human_metadata_and_source_matched_refreeze",
   "artifact_validation_sha": "3219ec40fbc372e003faf4a9d3be1f4e2c25effb",
-  "metadata_note": "Governance metadata written after the validated freeze. These updates do not change scientific parameters, package algorithms or the artifacts produced from artifact_validation_sha; therefore the validated artifact SHA remains unchanged.",
-  "final_freeze": {
+  "metadata_note": "The artifact at artifact_validation_sha remains a valid record of the earlier theorem-complete source, but PRs #110-#112 changed distributed package source while preserving scientific semantics and frozen G2 evidence. A final source-matched G5 and anonymous-reviewer refreeze is therefore required before submission. The artifact_validation_sha field is intentionally not advanced until those workflows succeed.",
+  "current_refreeze_request": {
+    "source_main_sha": "7501b4993cd1e6656ed0b1c2f30bab4617c1e750",
+    "reason": "publication-facing internal rename and compatibility isolation changed distributed package source after the previous G5 wheel was built",
+    "completed_source_changes": [
+      "PR #110: descriptive observation-information/calibration/simulator vocabulary",
+      "PR #111: canonical mechanism-region and sequential-design facades with private compatibility implementations",
+      "PR #112: current known-truth benchmark and Figure S1 presentation vocabulary"
+    ],
+    "required_trigger_markers": ["[g5-final]", "[reviewer-bundle]"],
+    "science_scope": "No G2 retuning, no change to V(Q)=I(S;Q|A_epsilon)/K, no change to frozen benchmark systems, policies, seeds or numerical headline claims."
+  },
+  "previous_validated_freeze": {
     "validated_sha": "3219ec40fbc372e003faf4a9d3be1f4e2c25effb",
-    "adaptive_theorem_mainline_sha": "689ba17d14fec2218e9e96f4c9e432eb8b71fb58",
-    "canonical_figure1_source": "causal_model/controlled_confounding_demo.py",
-    "canonical_figure1_output": "outputs/g5/figures/figure1_controlled_confounding.png",
-    "information_value_definition": "V(Q)=I(S;Q|A_epsilon)/K",
-    "science_scope": "The theorem-complete publication mainline is frozen without retuning frozen G2 systems, policies or numerical results."
+    "status": "pass_but_superseded_for_source_matched_release_by_later_package_rename",
+    "ci_workflow_run_id": 33841102122,
+    "g5_workflow_run_id": 33841102129,
+    "g5_artifact_id": 9924940887,
+    "g5_artifact_digest": "sha256:b094d9b525db453bee902580601a70620dc8108051be329be60761d70098fb91",
+    "reviewer_workflow_run_id": 33841102158,
+    "reviewer_artifact_id": 9924939413,
+    "reviewer_artifact_digest": "sha256:2a0fe9abbbaf5691f24a618a8877e030d4e74b61a1090b27789bf83c5902fd1d"
   },
   "ci": {
-    "status": "pass_python_3_10_3_12_on_validated_sha",
-    "workflow_run_id": 33841102122,
-    "validated_sha": "3219ec40fbc372e003faf4a9d3be1f4e2c25effb",
-    "checks": [
+    "status": "rename_pr_ci_green_final_source_refreeze_pending",
+    "latest_rename_pr": 112,
+    "latest_rename_pr_head_sha": "0006753c470ed9cac4da2427d87ce2f426b4640e",
+    "latest_rename_pr_ci_run_id": 33934851686,
+    "latest_rename_pr_ci_conclusion": "success",
+    "required_checks": [
       "scientific submission boundary",
       "MEE Research Article format",
+      "ScholarOne upload contract",
       "active method and Figure-1 naming",
       "repository program boundaries",
       "full Python 3.10, 3.11 and 3.12 pytest suites",
-      "adaptive recomputation theorem tests",
       "canonical Figure-1 behavioural regression",
       "publication figure and anonymous reviewer-bundle self-test on Python 3.11",
       "controlled figure smoke tests",
@@ -54,7 +70,7 @@
     "provenance_note": "Frozen protocol/result files retain their historical machine identifiers and policy keys unchanged."
   },
   "g5": {
-    "status": "pass",
+    "status": "previous_artifact_pass_source_matched_refreeze_pending",
     "validated_sha": "3219ec40fbc372e003faf4a9d3be1f4e2c25effb",
     "workflow_run_id": 33841102129,
     "artifact_id": 9924940887,
@@ -78,7 +94,7 @@
     }
   },
   "reviewer_bundle": {
-    "status": "pass",
+    "status": "previous_artifact_pass_source_matched_refreeze_pending",
     "validated_sha": "3219ec40fbc372e003faf4a9d3be1f4e2c25effb",
     "workflow_run_id": 33841102158,
     "artifact_id": 9924939413,
@@ -138,17 +154,18 @@
     "reason": "DOI minting is an external archive operation and must follow final submission-file freeze and the double-anonymous release plan."
   },
   "remaining_publication_operations": [
+    "run one source-matched tagged G5 and anonymous reviewer-bundle freeze from the post-rename package source",
+    "record the new artifact SHA, wheel hash, figure hashes and reviewer artifact identity and update the ScholarOne upload contract",
     "resolve the six human ScholarOne blockers recorded in paper/scholarone_upload_manifest.json",
-    "if the Methods AI disclosure changes, rebuild the anonymous reviewer bundle so its review_manuscript matches the submitted Main Document; a new G5 freeze is unnecessary unless package/scientific content changes",
     "export the final Main Document PDF with Figures 1-3 and required line/page formatting",
     "export the final Supporting Information PDF with Figure S1",
     "export the completed title page as Supplemental Document Not for Review",
     "finalize the optional cover letter only if it will be used",
-    "tag artifact_validation_sha 3219ec40fbc372e003faf4a9d3be1f4e2c25effb as v0.1.0 when the submitted files are fixed",
+    "tag the final source-matched artifact-validation SHA as v0.1.0 when the submitted files are fixed",
     "mint and record an archival DOI according to the double-anonymous release plan"
   ],
   "nonblocking_maintenance": [
     "Update pyproject.toml project.license from the deprecated TOML-table form to an SPDX string before the setuptools 2027-02-18 removal deadline; do this outside the validated submission freeze unless a new G5 artifact is intentionally generated."
   ],
-  "science_freeze_policy": "Any change to G2 scientific parameters, observation-information semantics, adaptive-recomputation theorem content, frozen numerical claims or distributed package source requires a new protocol/version or intentional G5 artifact freeze. A text-only change to the review manuscript requires a refreshed anonymous reviewer bundle but does not by itself require a new G5 freeze. Metadata-only readiness/title-page updates do not supersede artifact_validation_sha."
+  "science_freeze_policy": "Any change to G2 scientific parameters, observation-information semantics, adaptive-recomputation theorem content, frozen numerical claims or distributed package source requires a new protocol/version or intentional G5 artifact freeze. A text-only change to the review manuscript requires a refreshed anonymous reviewer bundle but does not by itself require a new G5 freeze. Metadata-only readiness/title-page updates do not supersede an artifact_validation_sha until the corresponding source-matched workflows succeed."
 }

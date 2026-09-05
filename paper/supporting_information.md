@@ -100,6 +100,17 @@ It selects the largest positive current value, obtains the realised outcome only
 
 An explicitly named normalized edge-cut fallback is retained only for candidates whose predictive partition is unavailable. Every step records its score source; fallback scores are not reported as validated observation information values.
 
+### S2.4 When recomputation has strict value
+
+Recomputation is not assumed to improve every candidate family. For a two-step finite design, let `X` be the first observation and let `U_q(x)` denote the information value of remaining candidate `q` after branch `X=x`. The adaptive and strongest precommitted-static second-step values are
+
+```text
+V_adapt  = E[max_q U_q(X)],
+V_static = max_q E[U_q(X)].
+```
+
+Then `V_adapt>=V_static`. Equality holds if and only if at least one candidate is branchwise optimal on every positive-probability first-outcome branch. Strict adaptive advantage occurs exactly when the intersection of those branchwise argmax sets is empty. This is a two-step finite-design result; it does not establish global optimality of a full multi-step greedy policy.
+
 ---
 
 ## S3. Frozen G2 observation-selection benchmark
@@ -145,6 +156,25 @@ and the relative reduction was
 
 The manuscript reports the absolute counts with the ratio because a fold change is unstable when the denominator approaches zero. All 10,000 system–policy–budget records retained the hidden true explanation.
 
+### S3.3 Post-frozen static initial-information diagnostic
+
+The preregistered G2 comparison above was not changed. To determine whether its guided-versus-random advantage also demonstrated a practical benefit of adaptive recomputation, we subsequently ran a matched diagnostic with a stronger nonadaptive policy. `static_initial_information` ranks candidates once using their information values in the initial admissible region, discards candidates with non-positive initial value, and follows that fixed order without recomputation.
+
+The diagnostic reused the same generator settings, five seeds, 200 systems per seed, hidden truths, candidate vocabularies, nuisance measurements and budgets. It is explicitly **post-frozen and non-preregistered**.
+
+**Table S2. Claim-ceiling diagnostic comparing adaptive and static information ordering.**
+
+| Budget | Policy | Converged | Initial edges resolved | Mean observations | Mean nuisance selections | False exclusion |
+|---:|---|---:|---:|---:|---:|---:|
+| 2 | information-guided adaptive | 0.990 | 1.0000 | 1.505 | 0.001 | 0.000 |
+| 2 | static initial information | 0.990 | 1.0000 | 1.505 | 0.001 | 0.000 |
+| 2 | random order | 0.435 | 0.6045 | 1.821 | 0.974 | 0.000 |
+| 4 | information-guided adaptive | 0.999 | 1.0000 | 1.518 | 0.014 | 0.000 |
+| 4 | static initial information | 0.998 | 1.0000 | 1.518 | 0.014 | 0.000 |
+| 4 | random order | 0.940 | 1.0000 | 2.673 | 1.169 | 0.000 |
+
+The two information-based policies are essentially indistinguishable on this family. The frozen G2 evidence therefore supports **information-guided candidate screening** much more strongly than an empirical performance gain from adaptive recomputation. The separate theorem in S2.4 specifies when branch-dependent changes in the best remaining measurement make recomputation strictly valuable.
+
 ---
 
 ## S4. Auxiliary controlled checks
@@ -153,7 +183,7 @@ The manuscript reports the absolute counts with the ratio because a fold change 
 
 Under unchanged defaults, mean switch-state accuracy in the zero pattern-noise stratum was 0.6562 and recall of applicable true-ON switches was 1.000. Recall remained 1.000 in the 0.1 and 0.2 pattern-noise strata. Additional confounded explanations were allowed to survive, so exact-state accuracy was not expected to equal one.
 
-**Table S2. Known-truth aggregate results.**
+**Table S3. Known-truth aggregate results.**
 
 | Pattern noise | Cases | Accuracy | Precision | Recall | F1 | Mean admissibility error | R | D |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -183,6 +213,8 @@ Across eight candidate observations and four controlled truths per candidate, pr
 ### S5.1 Frozen evidence
 
 The anonymised reviewer bundle contains the manuscript and Supporting Information, frozen G2 protocol and result summary, frozen auxiliary-validation summary, figure inventory and generated figures, publication-facing observation-design implementation modules, benchmark generators, tests and a per-file SHA-256 manifest.
+
+The static initial-information comparison is a post-frozen claim-ceiling diagnostic rather than preregistered G2 evidence. Its purpose is to constrain interpretation: the frozen G2 random-order contrast establishes information-guided screening, while the adaptive-recomputation theorem states the conditions under which recomputation itself has strict expected value.
 
 ### S5.2 Explicit exclusions
 

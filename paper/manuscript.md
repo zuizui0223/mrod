@@ -37,7 +37,7 @@ Mechanism-Resolving Observation Design changes the inferential target. Rather th
 
 The method combines prior restriction, explicit biological constraints, entropy and value-of-information logic. Its novelty lies in their joint use for a specific ecological target: preservation and sequential reduction of mechanism ambiguity. The compatible set and its uncertainty are scientific outputs rather than intermediate objects discarded after a best-model decision. When the predictive outcomes of a candidate measurement are identified by the current admissible region, candidate value is exactly the normalized mutual information between that measurement and the remaining mechanism vector.
 
-This paper makes four contributions. First, it defines a reproducible admissible mechanism region and separates observed targets from context, diagnostics and future measurements. Second, it derives a normalized observation information value with a direct mutual-information interpretation. Third, it closes the loop through sequential recomputation after each realised observation. Fourth, it tests observation selection itself in a controlled truth-peek-free benchmark where informative candidates compete with valid but mechanism-independent nuisance measurements.
+This paper makes four contributions. First, it defines a reproducible admissible mechanism region and separates observed targets from context, diagnostics and future measurements. Second, it derives a normalized observation information value with a direct mutual-information interpretation. Third, it closes the loop through sequential recomputation after each realised observation and gives an exact two-step condition for when recomputation has strict expected value over the best precommitted next measurement. Fourth, it tests observation selection itself in a controlled truth-peek-free benchmark where informative candidates compete with valid but mechanism-independent nuisance measurements.
 
 The validation claim is intentionally algorithmic and conditional. We do not use a natural system to claim discovery of a true ecological mechanism. Instead, we test whether, in a declared family of confounded systems with known hidden truth, information-guided design chooses informative measurements without seeing their outcomes in advance, reduces ambiguity under a limited budget, and avoids excluding the generating explanation. This makes the synthetic benchmark—not an illustrative field narrative—the principal evidence for the observation-selection method.
 
@@ -144,6 +144,15 @@ for t = 0,1,... until stopping:
     recompute all predictive probabilities and scores
 ```
 
+Recomputation is not assumed to be uniformly beneficial. For a two-step finite design, let `X` be the first observation and let `U_q(x)=V(Q_q | X=x)` denote the normalized information value of a remaining candidate `q` on branch `x`. The adaptive and strongest precommitted-static second-step values are
+
+```text
+V_adapt  = E[max_q U_q(X)],
+V_static = max_q E[U_q(X)].
+```
+
+Therefore `V_adapt>=V_static`. Equality holds if and only if at least one candidate is branchwise optimal on every positive-probability first-outcome branch; strict adaptive advantage occurs exactly when the intersection of those branchwise argmax sets is empty. This result characterizes the value of recomputation in the declared finite two-step setting. It does not establish global optimality of the full multi-step greedy policy.
+
 The procedure stops when the observation budget is exhausted, the declared confounding structure is resolved, or every available verified candidate has zero current information value. The last condition is substantive: unresolved mechanisms may remain, but the declared measurement vocabulary contains no additional information about them.
 
 ### 2.4 AI-assisted development disclosure
@@ -152,7 +161,7 @@ OpenAI ChatGPT was used interactively to assist with code review, draft editing 
 
 ### 2.5 Controlled validation design
 
-We used four complementary controlled checks. None is presented as natural-system causal validation.
+We used four complementary controlled checks for the primary method validation, plus one post-frozen claim-ceiling diagnostic. None is presented as natural-system causal validation.
 
 #### 2.5.1 Confounding demonstration
 
@@ -183,6 +192,10 @@ Historical protocol identifiers and stored policy keys are preserved unchanged i
 
 One implementation independently computes expected resolvability gain and empirical mutual information from the joint `(S,Q)` table. A second check compares stored-region conditioning with fresh deterministic re-inference for quantitative observations. Finally, predicted observation information value is compared with realised resolvability gains across controlled hidden truths. These checks distinguish an algebraic identity, a computational shortcut and empirical calibration.
 
+#### 2.5.5 Post-frozen static-information diagnostic
+
+Because the frozen G2 contrast uses uniform random ordering as its baseline, we subsequently ran a matched claim-ceiling diagnostic with a stronger nonadaptive comparator. `static_initial_information` ranks all candidates once by their information values in the initial admissible region, discards candidates with non-positive initial value, and follows the resulting fixed order without recomputing after realised outcomes. The diagnostic reused the same generator settings, five seeds, 200 systems per seed, hidden truths, candidate vocabularies, nuisance measurements and headline budgets as G2. It was conducted after the G2 freeze, was not preregistered, and did not modify the frozen protocol or its reported results.
+
 ## 3. Results
 
 ### 3.1 The admissible region preserves confounding instead of manufacturing a winner
@@ -209,7 +222,13 @@ The fold ratio is descriptive and is reported with its absolute values because r
 
 Hidden-truth false exclusion was zero in every policy-by-budget cell. All 10,000 system–policy–budget records retained the hidden generating explanation. Thus the selection advantage was not obtained by narrowing the accepted set so aggressively that the truth was discarded.
 
-### 3.4 Information-value implementation and calibration checks
+### 3.4 A stronger static-information baseline limits the adaptive claim
+
+The post-frozen matched diagnostic showed essentially no practical difference between adaptive recomputation and a static initial-information ordering on this benchmark family. At budget two, both information-based policies converged in 0.990 of systems, resolved 1.000 of initial edges on average, used 1.505 observations and selected 0.001 nuisance measurements. At budget four, adaptive and static policies converged in 0.999 and 0.998 of systems respectively; both resolved 1.000 of initial edges, used 1.518 observations and selected 0.014 nuisance measurements. False exclusion remained zero.
+
+Thus the frozen G2 family provides strong evidence for information-guided candidate screening but little empirical evidence for an incremental performance gain from recomputation itself. This negative diagnostic does not contradict the adaptive theorem: strict adaptive value is expected only when outcome branches disagree on the best remaining candidate in the sense formalized in Section 2.3. The diagnostic was not part of preregistered G2 and is used to narrow, not expand, the validation claim.
+
+### 3.5 Information-value implementation and calibration checks
 
 Expected resolvability gain and independently computed `I(S;Q|A_epsilon)/K` agreed to the implementation's display tolerance. For six directly checked quantitative observations, conditioning the stored deterministic admissible region and performing fresh re-inference produced identical resolvability gains; the maximum absolute difference was zero.
 
@@ -235,11 +254,11 @@ V(Q)=I(S;Q|A_epsilon)/K
 
 provides a direct interpretation for observation value. A measurement is useful exactly to the extent that it carries information about the mechanism distinctions still unresolved inside the current admissible region. This differs from ranking candidates by general precision, sample size or ecological prominence. A measurement can be scientifically interesting and still have zero information value for the ambiguity at hand.
 
-The sequential step is essential. After one observation, the admissible region changes, so the value of every remaining candidate can change. A static initial ranking can waste budget by continuing to collect redundant measurements. Sequential observation design instead recalculates the information state after each realised outcome. Its stopping rule also makes negative results actionable: if residual ambiguity remains but every candidate has zero validated information value, the declared observation vocabulary—not merely the current sample size—is insufficient.
+Sequential recomputation is conditionally valuable rather than uniformly necessary. After one observation, the admissible region changes and the value of every remaining candidate can change, but a static information ordering can be equally effective when one candidate remains branchwise optimal across all positive-probability outcomes. The two-step theorem makes this distinction exact: adaptive expected value is never smaller than the best precommitted second measurement, and it is strictly larger exactly when the branchwise argmax sets have no common candidate. The post-frozen static-information diagnostic is consistent with the equality side of this result for the present G2 family. Sequential observation design therefore recomputes by default because the relevant branch structure is generally unknown in advance, not because every problem is asserted to gain from adaptation.
 
 The G2 benchmark was designed to test selection rather than observation sufficiency. A candidate set containing only direct resolvers would show that informative measurements can solve confounds, but not that the method distinguishes them from wasted measurements. Adding valid mechanism-independent nuisance candidates created a controlled competition for budget. The resulting approximately 84-fold difference at budget four measures how often the uninformed policy spent scarce observations on candidates that had no designed mechanism information after both policies had enough budget to resolve the edge structure on average.
 
-The benchmark nevertheless defines a narrow claim. Information-guided design outperformed uniform random order over one frozen family of random confounded systems. This does not prove global optimality, superiority to every Bayesian design method, or performance under every stochastic ecological simulator. Candidate vocabularies were finite and explicitly represented. The nuisance measurements were independent of mechanisms rather than subtly correlated proxies. Richer baselines and misspecification challenges remain future work.
+The benchmark nevertheless defines a narrow claim. Information-guided design outperformed uniform random order over one frozen family of random confounded systems, while the stronger post-frozen static-information comparator essentially matched the adaptive policy. We therefore interpret the benchmark as validation of information-guided candidate screening, not as empirical proof that recomputation adds value in every system. The theorem supplies the conditional adaptive claim; neither result proves global optimality, superiority to every Bayesian design method, or performance under every stochastic ecological simulator. Candidate vocabularies were finite and explicitly represented. The nuisance measurements were independent of mechanisms rather than subtly correlated proxies. Broader misspecification challenges remain future work.
 
 Admissibility is always relative to a declared mechanism vocabulary, parameter prior, constraint grammar, observation map, discrepancy and tolerance. An omitted mechanism cannot be recovered by retaining the accepted set. A predictive partition must also be identified before stored-region information value can be computed. When outcomes overlap, are incomplete or require an unmodelled process, the honest result is non-estimability until an additional predictive model is supplied.
 
