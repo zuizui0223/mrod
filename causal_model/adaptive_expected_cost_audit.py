@@ -131,7 +131,9 @@ def audit_adaptive_expected_cost(
     No independence between query-acquisition indicators is needed. Attribution
     is withheld if the reference fixed bundle is not a superset of the adaptive
     query support. This routine does not claim that the selected tree minimizes
-    expected cost among adaptive trees with the same information.
+    expected cost among adaptive trees with the same information. In particular,
+    the existing planner may discard equal-information/equal-worst-cost trees
+    without comparing their scenario-specific expected costs.
     """
     tol = float(comparison_tolerance_bits)
     if not isfinite(tol) or tol < 0:
@@ -290,6 +292,32 @@ def early_stop_witness():
     return rows, scenarios
 
 
+def operational_tie_witness(*, common_first: bool):
+    """Equal-information trees have different expected cost under unequal target mass.
+
+    `rare_split` singles out the 0.1-mass target; `common_split` singles out the
+    0.8-mass target. Either query followed by the other fully resolves all three
+    targets with worst path cost two. Reversing candidate order changes which
+    equal-residual/equal-worst-cost tree survives the current planner frontier.
+    """
+    rows = ({"target": "rare"}, {"target": "common"}, {"target": "other"})
+    if common_first:
+        order = ("common_split", "rare_split")
+        events = (("rest", "rare"), ("common", "rest"), ("rest", "rest"))
+    else:
+        order = ("rare_split", "common_split")
+        events = (("rare", "rest"), ("rest", "common"), ("rest", "rest"))
+    matrix = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+    scenario = JointCalibrationScenario(
+        "unequal_target_mass",
+        (1.0, 8.0, 1.0),
+        events,
+        matrix,
+        "synthetic deterministic equal-information operational tie",
+    )
+    return rows, (scenario,), order
+
+
 def synthetic_example() -> dict:
     early_rows, early_scenarios = early_stop_witness()
     early = audit_adaptive_expected_cost(
@@ -323,4 +351,18 @@ def synthetic_example() -> dict:
         target_columns=("target",),
         support_reference="synthetic unequal-cost routing panel",
     )
-    return early, routing, unequal_cost_routing
+    tie_results = []
+    for common_first in (False, True):
+        rows, scenarios, order = operational_tie_witness(common_first=common_first)
+        tie_results.append(
+            audit_adaptive_expected_cost(
+                rows,
+                scenarios,
+                candidate_order=order,
+                acquisition_costs={"rare_split": 1, "common_split": 1},
+                budget=2,
+                target_columns=("target",),
+                support_reference="synthetic equal-information expected-cost tie panel",
+            )
+        )
+    return early, routing, unequal_cost_routing, tuple(tie_results)
