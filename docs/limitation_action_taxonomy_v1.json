@@ -1,0 +1,184 @@
+{
+  "axes": [
+    {
+      "id": "evidence_integrity",
+      "owner": "REC/TNOA",
+      "states": [
+        {
+          "action": "audit_record_entry_and_denominator",
+          "state": "record_support_uncertain"
+        },
+        {
+          "action": "restore_or_retain_richer_evidence_state",
+          "state": "semantic_coarsening_present"
+        },
+        {
+          "action": "proceed",
+          "state": "adequate_or_out_of_scope"
+        }
+      ]
+    },
+    {
+      "id": "observation_structure",
+      "owner": "Boundary/MROD",
+      "states": [
+        {
+          "action": "drop_as_structurally_zero_value_for_current_contrast",
+          "state": "candidate_determined_by_current_observation"
+        },
+        {
+          "action": "evaluate_mechanism_target_information_not_structural_novelty_alone",
+          "state": "candidate_structurally_new"
+        },
+        {
+          "action": "proceed_to_identification_or_repair_diagnosis",
+          "state": "current_target_collapsed_on_observation_fibre"
+        }
+      ]
+    },
+    {
+      "id": "current_state_estimability",
+      "owner": "MROD",
+      "states": [
+        {
+          "action": "repair_or_reestimate_current_admissible_region",
+          "state": "nonestimable"
+        },
+        {
+          "action": "proceed",
+          "state": "estimable"
+        }
+      ]
+    },
+    {
+      "id": "target_identification",
+      "owner": "Boundary/MROD",
+      "states": [
+        {
+          "action": "stop_fully_resolved",
+          "state": "fully_resolved"
+        },
+        {
+          "action": "stop_declared_target_resolved_report_residual_ambiguity",
+          "state": "target_identified_full_mechanism_ambiguous"
+        },
+        {
+          "action": "proceed_to_candidate_design",
+          "state": "target_unresolved"
+        },
+        {
+          "action": "report_identified_set_or_breakdown_range",
+          "state": "assumption_sensitive"
+        }
+      ]
+    },
+    {
+      "id": "candidate_prediction_coverage",
+      "owner": "MROD",
+      "states": [
+        {
+          "action": "expand_candidate_vocabulary",
+          "state": "none_declared"
+        },
+        {
+          "action": "identify_candidate_outcome_models",
+          "state": "none_estimable"
+        },
+        {
+          "action": "resolve_nonestimable_candidates_before_global_ranking",
+          "state": "partial"
+        },
+        {
+          "action": "proceed_to_information_horizon",
+          "state": "complete"
+        }
+      ]
+    },
+    {
+      "id": "information_horizon",
+      "owner": "MROD",
+      "states": [
+        {
+          "action": "measure_best_candidate",
+          "state": "positive_singleton"
+        },
+        {
+          "action": "audit_joint_candidate_information_before_sequence_limit",
+          "state": "zero_singleton_joint_not_audited"
+        },
+        {
+          "action": "use_nonmyopic_bundle_or_sequence_design",
+          "state": "zero_singleton_joint_positive"
+        },
+        {
+          "action": "redesign_or_expand_measurement_vocabulary",
+          "state": "joint_zero"
+        },
+        {
+          "action": "compare_repeat_vs_switch",
+          "state": "replication_still_informative"
+        },
+        {
+          "action": "switch_observation_type",
+          "state": "alternative_beats_repeat_ceiling"
+        },
+        {
+          "action": "report_finite_budget_recommendation_not_universal_impossibility",
+          "state": "observation_law_equivalence_fragile"
+        }
+      ]
+    },
+    {
+      "id": "specification_robustness",
+      "owner": "Boundary/MROD",
+      "states": [
+        {
+          "action": "report_stable_conclusion_and_followup",
+          "state": "conclusion_stable_recommendation_stable"
+        },
+        {
+          "action": "report_no_unique_next_observation",
+          "state": "conclusion_stable_recommendation_sensitive"
+        },
+        {
+          "action": "report_breakdown_and_stable_followup",
+          "state": "conclusion_sensitive_recommendation_stable"
+        },
+        {
+          "action": "report_assumption_dependence_before_action",
+          "state": "conclusion_sensitive_recommendation_sensitive"
+        }
+      ]
+    },
+    {
+      "id": "resource_operational",
+      "owner": "MROD",
+      "states": [
+        {
+          "action": "retain_best_candidate_for_future_budget",
+          "state": "budget_exhausted_best_known"
+        },
+        {
+          "action": "report_information_gain_not_cost_optimality",
+          "state": "adaptive_information_advantage"
+        },
+        {
+          "action": "report_skipped_measurements_if_attributable",
+          "state": "expected_cost_saving"
+        },
+        {
+          "action": "do_not_call_selected_tree_cost_optimal",
+          "state": "equal_information_cost_tie_sensitive"
+        },
+        {
+          "action": "declare_meta_prior_or_robust_cost_rule_before_scalar_cost_ranking",
+          "state": "cost_preference_crosses_scenarios"
+        }
+      ]
+    }
+  ],
+  "composition_rule": "report_all_applicable_states_and_actions; do_not_replace_the_vector_with_one_severity_score",
+  "principle": "report_orthogonal_states_and_actions_do_not_collapse_to_one_limitation_severity",
+  "schema": "limitation_action_taxonomy",
+  "version": "1.0"
+}
