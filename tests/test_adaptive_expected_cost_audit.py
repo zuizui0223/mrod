@@ -36,8 +36,9 @@ def test_early_stop_matches_full_information_with_lower_expected_cost_than_fixed
     assert row.selected_tree_worst_path_cost == 2
     assert row.scenario_worst_positive_path_cost == 2
     assert row.probability_below_selected_tree_worst_path == pytest.approx(1 / 3, abs=1e-12)
-    assert [(x.acquisition_cost, x.probability) for x in row.path_cost_distribution] == pytest.approx(
-        [(1, 1 / 3), (2, 2 / 3)], abs=1e-12
+    assert tuple(x.acquisition_cost for x in row.path_cost_distribution) == (1, 2)
+    assert tuple(x.probability for x in row.path_cost_distribution) == pytest.approx(
+        (1 / 3, 2 / 3), abs=1e-12
     )
     assert row.minimum_fixed_cost_matching_selected_information == 2
     assert row.expected_cost_saving_vs_information_matched_fixed == pytest.approx(1 / 3, abs=1e-12)
