@@ -12,7 +12,7 @@ from causal_model.adaptive_expected_cost_audit import synthetic_example
 
 
 def build_report() -> dict:
-    early, routing = synthetic_example()
+    early, routing, unequal = synthetic_example()
     return {
         "data_kind": "synthetic_adaptive_expected_cost_audit",
         "scope": (
@@ -21,6 +21,7 @@ def build_report() -> dict:
         ),
         "early_stop_witness": asdict(early),
         "routing_budget_profile": [asdict(receipt) for receipt in routing],
+        "unequal_cost_routing": asdict(unequal),
     }
 
 
