@@ -33,7 +33,27 @@ If no fixed bundle under the budget matches the adaptive information, the cost-s
 
 A fixed bundle pays its full declared additive cost because it is precommitted. If a supposedly fixed protocol conditionally omits later measurements after seeing earlier outcomes, it is an adaptive tree and should be modelled as one.
 
-## 3. Early-stop witness: same information, lower expected cost
+## 3. Attribute the saving to measurements that were avoided
+
+Suppose a cheapest information-matched fixed reference bundle `F` contains every query that the adaptive tree can ever acquire with positive probability in the scenario. Because the adaptive tree never repeats a query,
+
+```text
+E_s[C_pi]
+= sum_{q in F} c_q Pr_s(q acquired).
+```
+
+Therefore linearity of expectation gives the exact bookkeeping identity
+
+```text
+C(F) - E_s[C_pi]
+= sum_{q in F} c_q [1-Pr_s(q acquired)].
+```
+
+No independence between query-acquisition indicators is required. The audit reports each acquisition probability, skip probability and expected saving contribution.
+
+This attribution is withheld when no cheapest information-matched fixed bundle contains the adaptive query support. A numerical cost gap can still exist in that case, but labelling it as savings from specific omitted measurements would be misleading because the two policies may use different measurement vocabularies.
+
+## 4. Early-stop witness: same information, lower expected cost
 
 Three equally weighted targets are observed through two unit-cost measurements.
 
@@ -60,9 +80,9 @@ cheapest information-matched fixed cost = 2
 expected cost saving           = 1/3 cost unit.
 ```
 
-This is operational value without an information advantage.
+Whichever measurement the selected tree places second is skipped on the one-third early-stop branch. The attribution therefore returns one skipped unit-cost measurement with probability `1/3`; the other is always acquired. This is operational value without an information advantage.
 
-## 4. Context-routing witness: the two axes change with budget
+## 5. Context-routing witness: the two axes change with budget
 
 The existing routing witness has `context`, `assay0`, and `assay1`, each with unit cost. Context itself has zero direct target information but tells the adaptive tree which assay is relevant.
 
@@ -76,6 +96,16 @@ For the balanced-context scenario:
 
 At budget 2, adaptivity has an information advantage but no fixed policy reaches the same information, so there is no like-for-like cost saving to report. At budget 3, the fixed class catches up in information by acquiring all three measurements, while the adaptive tree still measures context and only the relevant assay. Information gap is zero but operational saving remains one cost unit.
 
+In the balanced scenario at budget 3,
+
+```text
+Pr(context acquired)=1
+Pr(assay0 acquired)=1/2
+Pr(assay1 acquired)=1/2.
+```
+
+Relative to the fixed bundle `(context, assay0, assay1)`, the skipped-assay contributions are `1/2 + 1/2 = 1` cost unit.
+
 This extends the existing budget-local routing result:
 
 ```text
@@ -83,19 +113,40 @@ adaptive information value can disappear when budget grows,
 while outcome-contingent avoidance of unnecessary measurements can still save resources.
 ```
 
-## 5. Claim boundaries
+## 6. Unequal costs make the saving scenario-dependent
+
+Keep the same routing likelihood but set abstract costs to
+
+```text
+context = 2
+assay0  = 1
+assay1  = 3.
+```
+
+A fixed full-information bundle costs `6`. The adaptive route costs `2` plus only the relevant assay. Hence expected cost depends on the scenario's context frequency:
+
+| Scenario | Expected adaptive cost | Information-matched fixed cost | Saving |
+|---|---:|---:|---:|
+| balanced context | 4.0 | 6 | 2.0 |
+| context0 common (3/4) | 3.5 | 6 | 2.5 |
+| context1 common (3/4) | 4.5 | 6 | 1.5 |
+
+For the balanced scenario, assay0 and assay1 are each skipped half the time, contributing `0.5*1 + 0.5*3 = 2` units of expected saving. For the context0-common scenario, the expensive assay1 is skipped three-quarters of the time, so the expected saving is larger. This is why expected cost is scenario-specific even when the selected tree and its information are unchanged.
+
+## 7. Claim boundaries
 
 - Expected cost is conditional on the supplied scenario weights and complete joint observation law.
 - The audit does not verify laboratory/field costs, likelihood calibration, intervention compatibility or natural-system exhaustiveness.
 - `acquisition_cost` is an abstract positive resource unit unless the caller supplies a scientifically defensible mapping to money, time, samples or another resource.
 - The selected adaptive tree is **not** claimed to minimize expected cost.
 - A cost saving against an information-matched fixed bundle is not a utility optimum; another adaptive tree may dominate it on cost, information, or both.
+- Skipped-measurement attribution is issued only when an information-matched fixed reference bundle contains the adaptive query support.
 - Scenario-specific expected costs are not averaged across calibration scenarios without a declared meta-distribution.
 - A lower expected cost does not license a biological or causal conclusion.
 
 Cost-sensitive active learning, adaptive stochastic optimization, sequential Bayesian design and optimal stopping are established research areas. Relevant examples include Golovin & Krause (2011), *Adaptive Submodularity: Theory and Applications in Active Learning and Stochastic Optimization*, JAIR 42:427-486, and Cheng & Huan (2025), *Optimal Stopping for Sequential Bayesian Experimental Design*. This audit does not claim to invent cost-aware or stopping-aware design.
 
-## 6. Reproduce
+## 8. Reproduce
 
 ```bash
 python -m examples.adaptive_expected_cost_report > adaptive_expected_cost_report.json
