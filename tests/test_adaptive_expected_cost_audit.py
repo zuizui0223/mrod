@@ -16,6 +16,10 @@ def _uniform(result):
     return next(row for row in result.scenario_results if row.scenario == "uniform_context")
 
 
+def _scenario(result, name):
+    return next(row for row in result.scenario_results if row.scenario == name)
+
+
 def test_early_stop_matches_full_information_with_lower_expected_cost_than_fixed_bundle():
     rows, scenarios = early_stop_witness()
     receipt = audit_adaptive_expected_cost(
@@ -42,10 +46,14 @@ def test_early_stop_matches_full_information_with_lower_expected_cost_than_fixed
     )
     assert row.minimum_fixed_cost_matching_selected_information == 2
     assert row.expected_cost_saving_vs_information_matched_fixed == pytest.approx(1 / 3, abs=1e-12)
+    assert set(row.attribution_reference_fixed_bundle or ()) == {"screen", "resolve"}
+    assert row.attributed_expected_cost_saving == pytest.approx(1 / 3, abs=1e-12)
+    assert sum(item.expected_cost_saving for item in row.skipped_measurement_savings) == pytest.approx(1 / 3)
+    assert sorted(item.skip_probability for item in row.skipped_measurement_savings) == pytest.approx([0.0, 1 / 3])
 
 
 def test_routing_information_gap_and_expected_cost_saving_are_different_budget_local_axes():
-    _, routing = synthetic_example()
+    _, routing, _ = synthetic_example()
     by_budget = {receipt.budget: receipt for receipt in routing}
 
     b1 = _uniform(by_budget[1])
@@ -59,6 +67,7 @@ def test_routing_information_gap_and_expected_cost_saving_are_different_budget_l
     assert b2.expected_acquisition_cost == pytest.approx(2.0, abs=1e-12)
     assert b2.minimum_fixed_cost_matching_selected_information is None
     assert b2.expected_cost_saving_vs_information_matched_fixed is None
+    assert b2.attribution_reference_fixed_bundle is None
 
     b3 = _uniform(by_budget[3])
     assert b3.adaptive_information_gain_over_fixed_oracle_bits == pytest.approx(0.0, abs=1e-12)
@@ -66,7 +75,32 @@ def test_routing_information_gap_and_expected_cost_saving_are_different_budget_l
     assert b3.expected_acquisition_cost == pytest.approx(2.0, abs=1e-12)
     assert b3.minimum_fixed_cost_matching_selected_information == 3
     assert b3.expected_cost_saving_vs_information_matched_fixed == pytest.approx(1.0, abs=1e-12)
+    assert b3.attributed_expected_cost_saving == pytest.approx(1.0, abs=1e-12)
+    by_query = {item.candidate: item for item in b3.skipped_measurement_savings}
+    assert by_query["context"].skip_probability == pytest.approx(0.0)
+    assert by_query["assay0"].skip_probability == pytest.approx(0.5)
+    assert by_query["assay1"].skip_probability == pytest.approx(0.5)
     assert b3.probability_below_selected_tree_worst_path == pytest.approx(0.0, abs=1e-12)
+
+
+def test_unequal_cost_routing_makes_scenario_specific_savings_explicit():
+    _, _, unequal = synthetic_example()
+    uniform = _scenario(unequal, "uniform_context")
+    context0 = _scenario(unequal, "context0_common")
+    context1 = _scenario(unequal, "context1_common")
+
+    assert uniform.expected_acquisition_cost == pytest.approx(4.0)
+    assert context0.expected_acquisition_cost == pytest.approx(3.5)
+    assert context1.expected_acquisition_cost == pytest.approx(4.5)
+    assert uniform.minimum_fixed_cost_matching_selected_information == 6
+    assert context0.minimum_fixed_cost_matching_selected_information == 6
+    assert context1.minimum_fixed_cost_matching_selected_information == 6
+    assert uniform.attributed_expected_cost_saving == pytest.approx(2.0)
+    assert context0.attributed_expected_cost_saving == pytest.approx(2.5)
+    assert context1.attributed_expected_cost_saving == pytest.approx(1.5)
+
+    uniform_use = {item.candidate: item.acquisition_probability for item in uniform.query_use_probabilities}
+    assert uniform_use == pytest.approx({"context": 1.0, "assay0": 0.5, "assay1": 0.5})
 
 
 def test_expected_cost_is_scenario_specific_and_never_exceeds_selected_pathwise_budget():
@@ -84,6 +118,9 @@ def test_expected_cost_is_scenario_specific_and_never_exceeds_selected_pathwise_
     for row in receipt.scenario_results:
         assert 0 <= row.expected_acquisition_cost <= row.selected_tree_worst_path_cost <= 3
         assert sum(item.probability for item in row.path_cost_distribution) == pytest.approx(1.0)
+        assert sum(item.expected_cost_contribution for item in row.query_use_probabilities) == pytest.approx(
+            row.expected_acquisition_cost
+        )
 
 
 def test_missing_joint_likelihood_fails_closed_without_expected_cost_claim():
