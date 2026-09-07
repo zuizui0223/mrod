@@ -133,12 +133,49 @@ A fixed full-information bundle costs `6`. The adaptive route costs `2` plus onl
 
 For the balanced scenario, assay0 and assay1 are each skipped half the time, contributing `0.5*1 + 0.5*3 = 2` units of expected saving. For the context0-common scenario, the expensive assay1 is skipped three-quarters of the time, so the expected saving is larger. This is why expected cost is scenario-specific even when the selected tree and its information are unchanged.
 
-## 7. Claim boundaries
+## 7. Equal information and equal worst-path cost do not imply expected-cost optimality
+
+The planner does not use expected acquisition cost in its objective or in frontier pruning. This matters even when two adaptive trees have identical target information and identical worst-path cost.
+
+A controlled three-target witness uses target masses
+
+```text
+rare   = 0.1
+common = 0.8
+other  = 0.1.
+```
+
+Two unit-cost measurements are available. `rare_split` isolates the rare target and `common_split` isolates the common target. Either measurement followed by the other fully resolves the target, so both two-stage trees have the same target information and worst-path cost `2`.
+
+If `rare_split` is first, only the 0.1-mass branch terminates after one observation:
+
+```text
+E[C | rare_split first] = 1 + 0.9 = 1.9.
+```
+
+If `common_split` is first, the 0.8-mass branch terminates immediately:
+
+```text
+E[C | common_split first] = 1 + 0.2 = 1.2.
+```
+
+The current planner can retain different equal-information trees when the candidate order is reversed because expected cost is not part of the optimization or tie-break. This is an executable **claim ceiling**, not a bug fix to the planner:
+
+```text
+same target information
++ same worst-path budget
+!= same expected operational cost.
+```
+
+Therefore the expected-cost audit must not be read as evidence that the selected adaptive tree is resource-optimal. A future cost-aware planner would be a distinct optimization problem and belongs to the established literature on cost-sensitive active learning, adaptive stochastic optimization and optimal stopping.
+
+## 8. Claim boundaries
 
 - Expected cost is conditional on the supplied scenario weights and complete joint observation law.
 - The audit does not verify laboratory/field costs, likelihood calibration, intervention compatibility or natural-system exhaustiveness.
 - `acquisition_cost` is an abstract positive resource unit unless the caller supplies a scientifically defensible mapping to money, time, samples or another resource.
 - The selected adaptive tree is **not** claimed to minimize expected cost.
+- Candidate ordering can change which equal-information/equal-worst-cost tree is retained; such changes are operationally relevant but do not change the information objective.
 - A cost saving against an information-matched fixed bundle is not a utility optimum; another adaptive tree may dominate it on cost, information, or both.
 - Skipped-measurement attribution is issued only when an information-matched fixed reference bundle contains the adaptive query support.
 - Scenario-specific expected costs are not averaged across calibration scenarios without a declared meta-distribution.
@@ -146,7 +183,7 @@ For the balanced scenario, assay0 and assay1 are each skipped half the time, con
 
 Cost-sensitive active learning, adaptive stochastic optimization, sequential Bayesian design and optimal stopping are established research areas. Relevant examples include Golovin & Krause (2011), *Adaptive Submodularity: Theory and Applications in Active Learning and Stochastic Optimization*, JAIR 42:427-486, and Cheng & Huan (2025), *Optimal Stopping for Sequential Bayesian Experimental Design*. This audit does not claim to invent cost-aware or stopping-aware design.
 
-## 8. Reproduce
+## 9. Reproduce
 
 ```bash
 python -m examples.adaptive_expected_cost_report > adaptive_expected_cost_report.json
