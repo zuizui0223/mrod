@@ -6,6 +6,7 @@ import pytest
 from causal_model.adaptive_expected_cost_audit import (
     audit_adaptive_expected_cost,
     early_stop_witness,
+    operational_tie_witness,
     synthetic_example,
 )
 from causal_model.adaptive_joint_design import routing_witness
@@ -53,7 +54,7 @@ def test_early_stop_matches_full_information_with_lower_expected_cost_than_fixed
 
 
 def test_routing_information_gap_and_expected_cost_saving_are_different_budget_local_axes():
-    _, routing, _ = synthetic_example()
+    _, routing, _, _ = synthetic_example()
     by_budget = {receipt.budget: receipt for receipt in routing}
 
     b1 = _uniform(by_budget[1])
@@ -84,7 +85,7 @@ def test_routing_information_gap_and_expected_cost_saving_are_different_budget_l
 
 
 def test_unequal_cost_routing_makes_scenario_specific_savings_explicit():
-    _, _, unequal = synthetic_example()
+    _, _, unequal, _ = synthetic_example()
     uniform = _scenario(unequal, "uniform_context")
     context0 = _scenario(unequal, "context0_common")
     context1 = _scenario(unequal, "context1_common")
@@ -101,6 +102,47 @@ def test_unequal_cost_routing_makes_scenario_specific_savings_explicit():
 
     uniform_use = {item.candidate: item.acquisition_probability for item in uniform.query_use_probabilities}
     assert uniform_use == pytest.approx({"context": 1.0, "assay0": 0.5, "assay1": 0.5})
+
+
+def test_equal_information_equal_worst_cost_trees_can_have_different_expected_costs():
+    rare_rows, rare_scenarios, rare_order = operational_tie_witness(common_first=False)
+    common_rows, common_scenarios, common_order = operational_tie_witness(common_first=True)
+    rare = audit_adaptive_expected_cost(
+        rare_rows,
+        rare_scenarios,
+        candidate_order=rare_order,
+        acquisition_costs={"rare_split": 1, "common_split": 1},
+        budget=2,
+        target_columns=("target",),
+        support_reference="synthetic rare-first operational tie",
+    )
+    common = audit_adaptive_expected_cost(
+        common_rows,
+        common_scenarios,
+        candidate_order=common_order,
+        acquisition_costs={"rare_split": 1, "common_split": 1},
+        budget=2,
+        target_columns=("target",),
+        support_reference="synthetic common-first operational tie",
+    )
+    rare_row, common_row = rare.scenario_results[0], common.scenario_results[0]
+    assert rare_row.selected_information_bits == pytest.approx(common_row.selected_information_bits, abs=1e-12)
+    assert rare_row.selected_information_bits == pytest.approx(
+        -(0.1 * log2(0.1) + 0.8 * log2(0.8) + 0.1 * log2(0.1)), abs=1e-12
+    )
+    assert rare_row.selected_tree_worst_path_cost == common_row.selected_tree_worst_path_cost == 2
+    assert rare_row.expected_acquisition_cost == pytest.approx(1.9, abs=1e-12)
+    assert common_row.expected_acquisition_cost == pytest.approx(1.2, abs=1e-12)
+    assert rare_row.expected_acquisition_cost - common_row.expected_acquisition_cost == pytest.approx(0.7)
+    assert not rare.expected_cost_optimized
+    assert not common.expected_cost_optimized
+
+
+def test_synthetic_report_registers_both_operational_tie_orders():
+    _, _, _, ties = synthetic_example()
+    assert len(ties) == 2
+    costs = [receipt.scenario_results[0].expected_acquisition_cost for receipt in ties]
+    assert costs == pytest.approx([1.9, 1.2], abs=1e-12)
 
 
 def test_expected_cost_is_scenario_specific_and_never_exceeds_selected_pathwise_budget():
