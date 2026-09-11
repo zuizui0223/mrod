@@ -1,0 +1,109 @@
+name: Manuscript PDF production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "paper/manuscript.md"
+      - "paper/supporting_information.md"
+      - "paper/submission_header.tex"
+      - "paper/build_submission_source.py"
+      - "paper/make_g2_figure.py"
+      - "paper/final_figure_inventory.json"
+      - ".github/workflows/manuscript_pdf.yml"
+      - "causal_model/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Install Pandoc and TeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-latex-extra
+
+      - name: Validate canonical submission sources
+        run: |
+          python paper/check_submission_bundle.py
+          python paper/check_mee_submission.py
+          python paper/check_active_naming.py
+          python scripts/check_repository_boundaries.py
+
+      - name: Rebuild frozen submission figures
+        run: |
+          mkdir -p outputs/g5/figures
+          python -m causal_model.controlled_confounding_demo --figure outputs/g5/figures/figure1_controlled_confounding.png
+          python paper/make_g2_figure.py --output outputs/g5/figures/figure2_g2_frozen_v2.png
+          python -m causal_model.observation_value_calibration --figure outputs/g5/figures/figure3_information_value_calibration.png
+          python -m causal_model.known_truth_benchmark --figure outputs/g5/figures/figureS1_known_truth.png
+          test -s outputs/g5/figures/figure1_controlled_confounding.png
+          test -s outputs/g5/figures/figure2_g2_frozen_v2.png
+          test -s outputs/g5/figures/figure3_information_value_calibration.png
+          test -s outputs/g5/figures/figureS1_known_truth.png
+
+      - name: Build presentation-only submission sources
+        run: |
+          python paper/build_submission_source.py
+          test -s outputs/submission_pdf/MROD_MAIN_WITH_FIGURES.md
+          test -s outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_WITH_FIGURE.md
+
+      - name: Verify anonymity before rendering
+        run: |
+          ! grep -R -i -E 'Ruiqi Zhang|Kyoto University|rachelzhang0223|github.com/zuizui0223' \
+            outputs/submission_pdf/MROD_MAIN_WITH_FIGURES.md \
+            outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_WITH_FIGURE.md
+
+      - name: Render anonymous Main and SI PDFs
+        run: |
+          pandoc outputs/submission_pdf/MROD_MAIN_WITH_FIGURES.md \
+            --from=markdown+tex_math_dollars+raw_tex \
+            --pdf-engine=xelatex \
+            --include-in-header=paper/submission_header.tex \
+            --resource-path=. \
+            -V geometry:margin=1in \
+            -o outputs/submission_pdf/MROD_MAIN_ANONYMOUS.pdf
+          pandoc outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_WITH_FIGURE.md \
+            --from=markdown+tex_math_dollars+raw_tex \
+            --pdf-engine=xelatex \
+            --include-in-header=paper/submission_header.tex \
+            --resource-path=. \
+            -V geometry:margin=1in \
+            -o outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_ANONYMOUS.pdf
+          test -s outputs/submission_pdf/MROD_MAIN_ANONYMOUS.pdf
+          test -s outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_ANONYMOUS.pdf
+
+      - name: Record hashes
+        run: |
+          sha256sum \
+            outputs/submission_pdf/MROD_MAIN_ANONYMOUS.pdf \
+            outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_ANONYMOUS.pdf \
+            > outputs/submission_pdf/SHA256SUMS.txt
+          cat outputs/submission_pdf/SHA256SUMS.txt
+
+      - name: Upload PDF production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mrod-mee-anonymous-pdfs-${{ github.sha }}
+          path: |
+            outputs/submission_pdf/MROD_MAIN_ANONYMOUS.pdf
+            outputs/submission_pdf/MROD_SUPPORTING_INFORMATION_ANONYMOUS.pdf
+            outputs/submission_pdf/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
