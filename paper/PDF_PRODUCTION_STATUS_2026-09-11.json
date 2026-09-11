@@ -1,0 +1,62 @@
+{
+  "schema": "mrod-mee-pdf-production-v1",
+  "date": "2026-09-11",
+  "paper": "Mechanism-Resolving Observation Design",
+  "target_journal": "Methods in Ecology and Evolution",
+  "status": "anonymous-main-and-si-pdf-production-validated",
+  "science_freeze": {
+    "validated_science_sha": "a8d21b30646df4dc337f1455ca7d89662b4d7ba3",
+    "policy": "PDF production is presentation-only and does not supersede the frozen scientific validation artifact."
+  },
+  "production_source_sha": "4a1637844583fdfe3fdf2886fc6741fc60001f79",
+  "workflow": {
+    "name": "Manuscript PDF production",
+    "run_id": 34603759786,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "artifact_id": 10265242618,
+    "name": "mrod-mee-anonymous-pdfs-4a1637844583fdfe3fdf2886fc6741fc60001f79",
+    "digest": "sha256:cb430f7bc68bfcc91d1f64b459b4cf11f6a0784e379506dbb9eb4a06ad85ce0d",
+    "retention_days": 90
+  },
+  "outputs": [
+    "MROD_MAIN_ANONYMOUS.pdf",
+    "MROD_SUPPORTING_INFORMATION_ANONYMOUS.pdf",
+    "SHA256SUMS.txt"
+  ],
+  "production_contract": {
+    "canonical_main_source": "paper/manuscript.md",
+    "canonical_si_source": "paper/supporting_information.md",
+    "presentation_header": "paper/submission_header.tex",
+    "source_builder": "paper/build_submission_source.py",
+    "figures": [
+      "figure1_controlled_confounding.png",
+      "figure2_g2_frozen_v2.png",
+      "figure3_information_value_calibration.png",
+      "figureS1_known_truth.png"
+    ],
+    "double_spaced": true,
+    "continuous_line_numbers": true,
+    "page_numbers": true,
+    "anonymous_source_scan": true,
+    "pandoc_xelatex_render": true
+  },
+  "supersedes_readiness_items": [
+    "export the final Main Document PDF with Figures 1-3 and required line/page formatting",
+    "export the final Supporting Information PDF with Figure S1"
+  ],
+  "remaining_human_submission_blockers": [
+    "correspondence postal address",
+    "correspondence email",
+    "acknowledgements",
+    "funding statement",
+    "ORCID",
+    "confirm and report the ChatGPT application/model version(s) used for final manuscript preparation",
+    "complete and export the non-anonymous title page",
+    "final human visual inspection of Main and SI PDFs"
+  ],
+  "science_blocker": false,
+  "production_blocker": false,
+  "next_mainline": "human metadata, title-page completion and final visual inspection only"
+}
