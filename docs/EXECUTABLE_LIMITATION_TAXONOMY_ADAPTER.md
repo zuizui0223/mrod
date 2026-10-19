@@ -53,21 +53,59 @@ joint zero         -> redesign_or_expand_measurement_vocabulary
 
 No precedence is imposed among these coordinates.
 
-## 3. Specification sensitivity
+## 3. Specification sensitivity: target status is not the conclusion
 
-`LimitationActionReport` already distinguishes target-state stability from recommendation stability across a declared specification set. The adapter issues one of the shared robustness states only when both coordinates are interpretable.
+**Stable nonidentification is not a stable identified conclusion.** Two admissible
+specifications may both leave the question target unresolved while preserving
+different compatible target sets. They can even agree on the best next
+observation. The old adapter inferred `conclusion_stable` from unchanged
+`target_resolution_stability`, which did not support that scientific claim.
 
-Examples:
+The default `project_limitation_action_report(report)` now projects
+per-specification estimability, target-resolution, candidate coverage and
+information-horizon states, **but no conclusion-robustness signal**.
 
-```text
-stable target status + stable common best
-    -> conclusion_stable_recommendation_stable
+The stronger comparison requires independently supplied evidence:
 
-stable target status + candidate ranking changes
-    -> conclusion_stable_recommendation_sensitive
+```python
+project_limitation_action_report(
+    report,
+    conclusion_images_by_specification={
+        "spec_a": ("pollination_only", "combined"),
+        "spec_b": ("combined", "pollination_only"),
+    },
+    conclusion_evidence_reference="declared target-set audit",
+)
 ```
 
-If a recommendation is simply unavailable, the adapter does not manufacture a robustness classification.
+This establishes stability of the **exact set-valued conclusion** across the
+declared specifications, while candidate ranking can still change. The source
+must establish that both images refer to the **same predeclared target and
+compatible support**. The adapter checks complete specification coverage,
+nonempty target images, unique values, consistency with target-resolved versus
+unresolved status and an explicit evidence reference; it does not independently
+validate the biological model, exhaustiveness or observation mechanism.
+
+A counterexample is
+
+```text
+spec_a target image = {pollination_only, combined}
+spec_b target image = {abiotic_only, combined}
+both target statuses = unresolved
+both preferred candidates = Q
+```
+
+Here the recommendation is stable, but the identified target sets differ.
+Projecting `conclusion_stable_recommendation_stable` from the two unchanged
+status flags would be wrong. Given those explicit images, the canonical output
+is `conclusion_sensitive_recommendation_stable`, meaning **identified-set
+sensitivity**. This does not automatically prove that a narrower directional,
+causal or fitness conclusion changed; that would require its own contrast audit.
+
+If no conclusion images are supplied, **do not silently assume stability**.
+When a recommendation is unavailable, the adapter likewise declines to invent
+a paired robustness label. Scientific conclusion and recommendation
+robustness remain separate evidence objects.
 
 ## 4. Replication versus switching
 
