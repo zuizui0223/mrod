@@ -70,7 +70,12 @@ def build_report() -> dict:
                     (CandidateScore("q1", True, 0.2), CandidateScore("q2", True, 0.8)),
                 ),
             )
-        )
+        ),
+        conclusion_images_by_specification={
+            "spec_a": ("pollination_only", "combined"),
+            "spec_b": ("combined", "pollination_only"),
+        },
+        conclusion_evidence_reference="synthetic shared target-set example",
     )
     replication = _replication_projection()
     early, routing, _, _ = cost_example()

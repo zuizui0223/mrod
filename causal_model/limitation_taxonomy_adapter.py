@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping, Sequence
 
 from .adaptive_cost_scenario_tradeoff import ScenarioCostTradeoffAudit
 from .adaptive_expected_cost_audit import AdaptiveExpectedCostAudit
@@ -155,32 +155,78 @@ def project_specification_status(status: SpecificationStatus) -> TaxonomyProject
     )
 
 
-def project_limitation_action_report(report: LimitationActionReport) -> TaxonomyProjection:
-    """Compose per-specification projections and any licensed robustness state."""
+def project_limitation_action_report(
+    report: LimitationActionReport,
+    *,
+    conclusion_images_by_specification: Mapping[str, Sequence[str]] | None = None,
+    conclusion_evidence_reference: str | None = None,
+) -> TaxonomyProjection:
+    """Project diagnostic statuses, without confusing resolution with conclusion stability.
+
+    Repeated `target_unresolved` means only that the target remains ambiguous
+    under each specification; it does NOT imply the identified target set is
+    the same. Therefore no canonical *conclusion* robustness state is issued
+    from status flags alone.
+
+    To project a conclusion-robustness state, pass the actual, nonempty
+    identified images of the SAME predeclared scientific target under every
+    specification and a provenance reference. Equality of those images
+    establishes stability of this SET-VALUED conclusion, not of an arbitrary
+    causal, directional or fitness claim. Changing images establishes
+    identified-set sensitivity; it does not by itself prove a directional
+    claim has changed. Recommendation stability remains a separate axis.
+    """
     pieces = [project_specification_status(status) for status in report.per_specification]
     signals = [signal for piece in pieces for signal in piece.signals]
     details = [action for piece in pieces for action in piece.detail_actions]
     sources = [source for piece in pieces for source in piece.sources]
 
-    conclusion_stable = report.target_resolution_stability.startswith("stable_target_")
-    conclusion_sensitive = report.target_resolution_stability.startswith("specification_sensitive")
-    recommendation_stable = report.recommendation_stability == "stable_common_best"
-    recommendation_sensitive = report.recommendation_stability.startswith("specification_sensitive")
+    if conclusion_images_by_specification is None:
+        if conclusion_evidence_reference is not None:
+            raise ValueError("a conclusion reference requires identified target images")
+        return _projection(signals, detail_actions=details, sources=sources)
 
-    robustness_state = None
-    if conclusion_stable and recommendation_stable:
-        robustness_state = "conclusion_stable_recommendation_stable"
-    elif conclusion_stable and recommendation_sensitive:
-        robustness_state = "conclusion_stable_recommendation_sensitive"
-    elif conclusion_sensitive and recommendation_stable:
-        robustness_state = "conclusion_sensitive_recommendation_stable"
-    elif conclusion_sensitive and recommendation_sensitive:
-        robustness_state = "conclusion_sensitive_recommendation_sensitive"
-    if robustness_state is not None:
-        signals.append(
-            _signal("specification_robustness", robustness_state, "limitation_action_report:specifications")
-        )
-        sources.append("limitation_action_report:specifications")
+    if not isinstance(conclusion_evidence_reference, str) or not conclusion_evidence_reference.strip():
+        raise ValueError("identified target images require an explicit evidence reference")
+
+    names = tuple(status.name for status in report.per_specification)
+    if len(names) != len(set(names)):
+        raise ValueError("specification names must be unique for conclusion comparison")
+    if set(conclusion_images_by_specification) != set(names):
+        raise ValueError("identified target images must cover exactly the declared specifications")
+
+    images = []
+    for status in report.per_specification:
+        if status.declared_target_status not in ("resolved", "unresolved"):
+            raise ValueError("nonestimable target states cannot establish conclusion robustness")
+        raw = conclusion_images_by_specification[status.name]
+        if isinstance(raw, (str, bytes)):
+            raise ValueError("identified target images must be sequences of target labels")
+        values = tuple(raw)
+        if not values or any(not isinstance(value, str) or not value.strip() for value in values):
+            raise ValueError("each identified target image must contain nonempty labels")
+        image = frozenset(values)
+        if len(image) != len(values):
+            raise ValueError("identified target image contains duplicate labels")
+        if (status.declared_target_status == "resolved") != (len(image) == 1):
+            raise ValueError("identified target image contradicts declared target-resolution status")
+        images.append(image)
+
+    conclusion_stable = all(image == images[0] for image in images[1:])
+    recommendation_stable = report.recommendation_stability == "stable_common_best"
+    recommendation_sensitive = report.recommendation_stability in (
+        "specification_sensitive_ranking",
+        "specification_sensitive_actionability",
+        "specification_sensitive_target_state",
+    )
+
+    if recommendation_stable or recommendation_sensitive:
+        conclusion = "stable" if conclusion_stable else "sensitive"
+        recommendation = "stable" if recommendation_stable else "sensitive"
+        state = f"conclusion_{conclusion}_recommendation_{recommendation}"
+        source = f"identified_target_images:{conclusion_evidence_reference}"
+        signals.append(_signal("specification_robustness", state, source))
+        sources.append(source)
 
     return _projection(signals, detail_actions=details, sources=sources)
 
