@@ -190,6 +190,8 @@ def project_limitation_action_report(
         raise ValueError("identified target images require an explicit evidence reference")
 
     names = tuple(status.name for status in report.per_specification)
+    if len(names) < 2:
+        raise ValueError("conclusion robustness across specifications requires at least two specifications")
     if len(names) != len(set(names)):
         raise ValueError("specification names must be unique for conclusion comparison")
     if set(conclusion_images_by_specification) != set(names):
@@ -214,19 +216,19 @@ def project_limitation_action_report(
 
     conclusion_stable = all(image == images[0] for image in images[1:])
     recommendation_stable = report.recommendation_stability == "stable_common_best"
-    recommendation_sensitive = report.recommendation_stability in (
-        "specification_sensitive_ranking",
-        "specification_sensitive_actionability",
-        "specification_sensitive_target_state",
-    )
+    # A change in target resolution or in candidate actionability does NOT
+    # establish that a pair of recommended candidates can be compared.
+    # Only complete, positive-information rankings that genuinely differ
+    # license the paired "recommendation_sensitive" taxonomy state.
+    recommendation_sensitive = report.recommendation_stability == "specification_sensitive_ranking"
 
+    source = f"identified_target_images:{conclusion_evidence_reference}"
+    sources.append(source)
     if recommendation_stable or recommendation_sensitive:
         conclusion = "stable" if conclusion_stable else "sensitive"
         recommendation = "stable" if recommendation_stable else "sensitive"
         state = f"conclusion_{conclusion}_recommendation_{recommendation}"
-        source = f"identified_target_images:{conclusion_evidence_reference}"
         signals.append(_signal("specification_robustness", state, source))
-        sources.append(source)
 
     return _projection(signals, detail_actions=details, sources=sources)
 
