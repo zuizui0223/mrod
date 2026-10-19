@@ -88,3 +88,25 @@ This contract does not claim that:
 - cost-aware, robust, goal-oriented or non-myopic design is new to this repository.
 
 The taxonomy is an internal interface and regression contract for keeping the growing limitation logic logically separated.
+
+
+## 4.1 Comparative-robustness evidence must actually be comparable
+
+The four paired `conclusion_*_recommendation_*` canonical labels are issued only
+for a **comparison of at least two predeclared specifications**, with a
+provenanced identified image for the same scientific target in each and either:
+
+- a stable common best among completely evaluated, positive-information
+  singleton candidates in all specifications, or
+- a genuine cross-specification reversal of such candidate rankings.
+
+One specification alone cannot establish robustness to specification changes.
+Likewise, if one specification has already resolved the target, or a candidate
+has positive immediate information in only part of the specification family,
+the recommendation question is **not comparable across the whole family**.
+It must not be converted into `recommendation_sensitive` merely because
+target resolution or actionability changes. Identified-set evidence provenance
+remains reportable without issuing a paired robustness label.
+
+This tightens the projection contract without altering the shared taxonomy JSON,
+MROD's selection objective, or the Boundary manuscript.
