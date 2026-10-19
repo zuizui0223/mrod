@@ -233,3 +233,63 @@ def test_adapter_remains_internal_and_off_submission_surface():
     manuscript = (root / "paper" / "manuscript.md").read_text(encoding="utf-8")
     assert "limitation_taxonomy_adapter" not in public_api
     assert "limitation_taxonomy_adapter" not in manuscript
+
+
+def test_one_specification_is_not_a_robustness_comparison():
+    report = build_limitation_action_report((
+        SpecificationInput(
+            "only", 1.0, (CandidateScore("q", True, 0.5),),
+        ),
+    ))
+    assert report.recommendation_stability == "stable_common_best"
+    with pytest.raises(ValueError, match="at least two specifications"):
+        project_limitation_action_report(
+            report,
+            conclusion_images_by_specification={"only": ("pollination_only", "combined")},
+            conclusion_evidence_reference="one specification is not a sensitivity analysis",
+        )
+
+
+def test_mixed_target_resolution_blocks_a_paired_recommendation_robustness_label():
+    report = build_limitation_action_report((
+        SpecificationInput(
+            "resolved", 1.0, (CandidateScore("q", True, 0.5),),
+            declared_target_resolved=True,
+        ),
+        SpecificationInput(
+            "unresolved", 1.0, (CandidateScore("q", True, 0.5),),
+        ),
+    ))
+    assert report.recommendation_stability == "specification_sensitive_target_state"
+    projection = project_limitation_action_report(
+        report,
+        conclusion_images_by_specification={
+            "resolved": ("pollination_only",),
+            "unresolved": ("pollination_only", "combined"),
+        },
+        conclusion_evidence_reference="same target, mixed resolution states",
+    )
+    assert not any(axis == "specification_robustness" for axis, _ in _states(projection))
+    assert "identified_target_images:same target, mixed resolution states" in projection.sources
+
+
+def test_mixed_actionability_is_not_a_comparable_candidate_ranking():
+    report = build_limitation_action_report((
+        SpecificationInput(
+            "informative", 1.0, (CandidateScore("q", True, 0.5),),
+        ),
+        SpecificationInput(
+            "singleton_zero", 1.0, (CandidateScore("q", True, 0.0),),
+        ),
+    ))
+    assert report.recommendation_stability == "specification_sensitive_actionability"
+    projection = project_limitation_action_report(
+        report,
+        conclusion_images_by_specification={
+            "informative": ("pollination_only", "combined"),
+            "singleton_zero": ("combined", "pollination_only"),
+        },
+        conclusion_evidence_reference="same identified set, differing one-step actionability",
+    )
+    assert not any(axis == "specification_robustness" for axis, _ in _states(projection))
+    assert "identified_target_images:same identified set, differing one-step actionability" in projection.sources
