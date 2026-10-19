@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from causal_model.adaptive_cost_scenario_tradeoff import (
     crossing_scenario_witness,
     uniform_scenario_witness,
@@ -71,27 +73,91 @@ def test_zero_singleton_joint_positive_maps_to_nonmyopic_action():
     assert "report_joint_information_despite_zero_singletons" in projection.detail_actions
 
 
-def test_cross_specification_ranking_sensitivity_projects_canonical_robustness_state():
-    report = build_limitation_action_report(
+def _same_unresolved_target_report(*, rankings_differ=True):
+    return build_limitation_action_report(
         (
             SpecificationInput(
-                "a",
-                1.0,
+                "a", 1.0,
                 (CandidateScore("q1", True, 0.8), CandidateScore("q2", True, 0.2)),
             ),
             SpecificationInput(
-                "b",
-                1.0,
-                (CandidateScore("q1", True, 0.2), CandidateScore("q2", True, 0.8)),
+                "b", 1.0,
+                (
+                    CandidateScore("q1", True, 0.2 if rankings_differ else 0.8),
+                    CandidateScore("q2", True, 0.8 if rankings_differ else 0.2),
+                ),
             ),
         )
     )
+
+
+def test_target_resolution_status_does_not_automatically_license_conclusion_robustness():
+    report = _same_unresolved_target_report()
+    assert report.target_resolution_stability == "stable_target_unresolved"
+    assert report.recommendation_stability == "specification_sensitive_ranking"
     projection = project_limitation_action_report(report)
+    assert not any(axis == "specification_robustness" for axis, _ in _states(projection))
+
+
+def test_same_identified_target_sets_and_different_rankings_require_explicit_evidence():
+    report = _same_unresolved_target_report()
+    projection = project_limitation_action_report(
+        report,
+        conclusion_images_by_specification={
+            "a": ("pollination_only", "combined"),
+            "b": ("combined", "pollination_only"),
+        },
+        conclusion_evidence_reference="synthetic same-set oracle",
+    )
     assert (
-        "specification_robustness",
-        "conclusion_stable_recommendation_sensitive",
+        "specification_robustness", "conclusion_stable_recommendation_sensitive"
     ) in _states(projection)
     assert "report_no_unique_next_observation" in _actions(projection)
+    assert "identified_target_images:synthetic same-set oracle" in projection.sources
+
+
+def test_changed_identified_sets_with_same_best_are_not_a_stable_conclusion():
+    report = _same_unresolved_target_report(rankings_differ=False)
+    assert report.target_resolution_stability == "stable_target_unresolved"
+    assert report.recommendation_stability == "stable_common_best"
+    unknown = project_limitation_action_report(report)
+    assert not any(axis == "specification_robustness" for axis, _ in _states(unknown))
+    evidenced = project_limitation_action_report(
+        report,
+        conclusion_images_by_specification={
+            "a": ("pollination_only", "combined"),
+            "b": ("abiotic_only", "combined"),
+        },
+        conclusion_evidence_reference="synthetic differing identified sets",
+    )
+    assert (
+        "specification_robustness", "conclusion_sensitive_recommendation_stable"
+    ) in _states(evidenced)
+    assert "report_breakdown_and_stable_followup" in _actions(evidenced)
+
+
+def test_unverifiable_conclusion_robustness_evidence_fails_closed():
+    report = _same_unresolved_target_report()
+    valid = {"a": ("a", "b"), "b": ("a", "b")}
+    with pytest.raises(ValueError, match="evidence reference"):
+        project_limitation_action_report(report, conclusion_images_by_specification=valid)
+    with pytest.raises(ValueError, match="requires identified target images"):
+        project_limitation_action_report(
+            report, conclusion_evidence_reference="unsupported provenance"
+        )
+    with pytest.raises(ValueError, match="exactly"):
+        project_limitation_action_report(
+            report,
+            conclusion_images_by_specification={"a": ("a", "b")},
+            conclusion_evidence_reference="synthetic incomplete",
+        )
+    with pytest.raises(ValueError, match="contradicts"):
+        project_limitation_action_report(
+            report,
+            conclusion_images_by_specification={"a": ("a",), "b": ("a", "b")},
+            conclusion_evidence_reference="synthetic mismatched status",
+        )
+
 
 
 def test_replication_switch_can_license_both_repeat_and_switch_actions():
