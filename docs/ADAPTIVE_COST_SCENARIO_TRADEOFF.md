@@ -108,3 +108,26 @@ Cost-sensitive active learning, robust design, stochastic optimization and decis
 python -m examples.adaptive_cost_scenario_tradeoff_report
 python -m pytest -q tests/test_adaptive_cost_scenario_tradeoff.py
 ```
+
+
+## 3.1 Precondition: comparable scientific information and resource ceiling
+
+A cost dominance claim from `compare_expected_cost_receipts` is licensed only
+when **at least two policies** are registered against the same declared
+scientific support and scenario names, the target information is equivalent
+within the declared comparison tolerance **in every scenario**, and the
+selected worst-path acquisition costs match.
+
+If any of these comparability conditions fails, the audit can still retain
+scenario-specific cost and information vectors where supported, but cannot
+issue a uniformly lowest information-matched policy or a scalar cost-ranking
+claim. Different support references are rejected because identical scenario
+names and coincidentally equal information numbers do not establish a common
+scientific question. The adapter also withholds the canonical
+`cost_preference_crosses_scenarios` recommendation action when the policies
+are not information- and worst-path matched.
+
+Receipt provenance strings alone do not verify common target semantics,
+joint-likelihood calibration or measurement interchangeability; those remain
+caller-declared evidence obligations. These guards do not turn the audit into
+a new cost optimizer.
