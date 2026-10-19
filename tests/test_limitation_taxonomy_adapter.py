@@ -293,3 +293,13 @@ def test_mixed_actionability_is_not_a_comparable_candidate_ranking():
     )
     assert not any(axis == "specification_robustness" for axis, _ in _states(projection))
     assert "identified_target_images:same identified set, differing one-step actionability" in projection.sources
+
+
+def test_cost_crossing_action_requires_information_matched_policy_comparison():
+    from dataclasses import replace
+    audit = crossing_scenario_witness()
+    assert audit.pairwise_cost_preference_crosses
+    unmatched = replace(audit, information_equivalent_by_scenario=False)
+    projection = project_scenario_cost_tradeoff(unmatched)
+    assert ("resource_operational", "cost_preference_crosses_scenarios") not in _states(projection)
+    assert ("resource_operational", "equal_information_cost_tie_sensitive") not in _states(projection)
