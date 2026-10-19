@@ -290,7 +290,11 @@ def project_scenario_cost_tradeoff(
         signals.append(
             _signal("resource_operational", "equal_information_cost_tie_sensitive", source)
         )
-    if audit.pairwise_cost_preference_crosses:
+    if (
+        audit.information_equivalent_by_scenario
+        and audit.same_worst_path_cost
+        and audit.pairwise_cost_preference_crosses
+    ):
         signals.append(
             _signal("resource_operational", "cost_preference_crosses_scenarios", source)
         )
