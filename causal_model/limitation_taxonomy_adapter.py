@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping, Sequence
 
 from .adaptive_cost_scenario_tradeoff import ScenarioCostTradeoffAudit
 from .adaptive_expected_cost_audit import AdaptiveExpectedCostAudit
