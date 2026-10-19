@@ -55,14 +55,16 @@ def compare_expected_cost_receipts(
     tol = float(comparison_tolerance)
     if not isfinite(tol) or tol < 0:
         raise ValueError("comparison_tolerance must be finite and non-negative")
-    if not policies:
-        raise ValueError("at least one policy receipt is required")
+    if len(policies) < 2:
+        raise ValueError("cost comparison requires at least two registered policies")
     labels = tuple(policies)
     receipts = tuple(policies[label] for label in labels)
     if len(set(labels)) != len(labels) or any(not isinstance(label, str) or not label.strip() for label in labels):
         raise ValueError("policy labels must be unique non-empty strings")
     if any(not receipt.complete_search or not receipt.scenario_results for receipt in receipts):
         raise ValueError("every policy must have a complete expected-cost audit")
+    if len({receipt.support_reference for receipt in receipts}) != 1:
+        raise ValueError("cost comparison requires a shared declared scientific support")
 
     scenario_names = tuple(row.scenario for row in receipts[0].scenario_results)
     if len(set(scenario_names)) != len(scenario_names):
@@ -91,15 +93,20 @@ def compare_expected_cost_receipts(
     )
     same_worst = len({vector.worst_path_cost for vector in vectors}) == 1
 
+    # Operational dominance is scientifically comparable only at matching
+    # target information and equal worst-path acquisition cost. Otherwise a
+    # cheaper but less informative policy cannot be called a cost winner.
+    comparable = information_equivalent and same_worst
     uniformly_lowest = []
-    for candidate in vectors:
-        if all(
-            candidate.expected_cost_by_scenario[name]
-            <= other.expected_cost_by_scenario[name] + tol
-            for other in vectors
-            for name in scenario_names
-        ):
-            uniformly_lowest.append(candidate.policy_label)
+    if comparable:
+        for candidate in vectors:
+            if all(
+                candidate.expected_cost_by_scenario[name]
+                <= other.expected_cost_by_scenario[name] + tol
+                for other in vectors
+                for name in scenario_names
+            ):
+                uniformly_lowest.append(candidate.policy_label)
 
     crosses = False
     for i, left in enumerate(vectors):
@@ -114,9 +121,10 @@ def compare_expected_cost_receipts(
             )
             crosses |= left_better and right_better
 
-    # A scalar ranking is licensed here only by uniform componentwise ordering.
-    # A meta-prior or robust scalarization would be an additional declared rule.
-    scalar_defined = bool(uniformly_lowest) and not crosses
+    # An operational winner is licensed only for comparable policies with
+    # uniform componentwise ordering. A meta-prior or robust scalarization
+    # would be an additional declared decision rule.
+    scalar_defined = comparable and bool(uniformly_lowest) and not crosses
     return ScenarioCostTradeoffAudit(
         tuple(vectors),
         scenario_names,
